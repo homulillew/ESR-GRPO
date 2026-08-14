@@ -1,0 +1,12 @@
+experiment: esr_grpo_full
+model: Qwen/Qwen3-30B-A3B-Instruct-2507
+framework: echo_verl
+adv_estimator: esr_grpo
+tool_config: configs/echo/esr_tools.yaml
+rollouts_per_question: 8
+train_batch_size: 32
+learning_rate: 1.0e-6
+positive_advantage_only: true
+non_selected_action_weight: 0.0
+reward: benchmark_final_correctness_only
+evaluation: [accuracy, evidence_recall, calibration_error]

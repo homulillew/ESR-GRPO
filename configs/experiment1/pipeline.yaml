@@ -1,0 +1,17 @@
+experiment: esr_pipeline_smoke
+model: Qwen/Qwen3.5-4B-Instruct
+subset_size: 100
+train_steps: 50
+rollouts_per_question: 8
+credit:
+  mode: esr_action
+  positive_advantage_only: true
+  success_threshold: 0.5
+  non_selected_action_weight: 0.0
+checks:
+  evidence_immutable: true
+  task_state_append_only: true
+  directory_must_cover_archive: true
+  require_legal_submit: true
+  record_complete_action_token_spans: true
+

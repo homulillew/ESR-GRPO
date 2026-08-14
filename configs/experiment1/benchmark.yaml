@@ -1,0 +1,18 @@
+experiment: benchmark_validation
+model: BAAI/AREX-Turbo
+subset_size: 100
+split: validation
+retrieval:
+  backend: echo_dense_server
+  top_k: 5
+  snippet_tokens_per_document: 512
+  open_page_chars: 16000
+judge:
+  model: Qwen/Qwen3-32B
+  temperature: 0.0
+metrics: [accuracy, evidence_recall, calibration_error]
+acceptance:
+  all_queries_have_ground_truth: true
+  all_retrieved_docids_belong_to_fixed_corpus: true
+  judge_parse_error_rate_max: 0.01
+

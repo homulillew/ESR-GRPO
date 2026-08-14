@@ -1,0 +1,14 @@
+experiment: evidence_ablation
+variants:
+  - name: full_evidence
+    persist_full_text: true
+    enable_read_evidence: true
+  - name: summary_only
+    persist_full_text: false
+    enable_read_evidence: false
+metrics:
+  - answer_accuracy
+  - read_evidence_calls
+  - factual_detail_error_rate
+  - average_tool_calls
+

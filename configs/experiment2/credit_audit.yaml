@@ -1,0 +1,9 @@
+experiment: action_credit_audit
+successful_trajectories: 50
+failed_trajectories: 50
+label_schema: [episode_id, selected_action_ids, annotator, notes]
+metrics: [precision, recall, f1, mask_density]
+acceptance:
+  recall_min: 0.8
+  inspect_every_false_positive: true
+

@@ -1,0 +1,21 @@
+tools:
+  - class_name: esr_grpo.integrations.echo_tools.ESRSearchTool
+    config: &esr_config
+      type: native
+      retrieval_url: ${oc.env:ESR_RETRIEVAL_URL,http://127.0.0.1:8000}
+      verifier_base_url: ${oc.env:ESR_VERIFIER_BASE_URL,http://127.0.0.1:8001/v1}
+      verifier_model: ${oc.env:ESR_VERIFIER_MODEL,Qwen3-32B}
+      verifier_api_key_env: ESR_VERIFIER_API_KEY
+      store_dir: ${oc.env:ESR_STORE_DIR,outputs/echo_stores}
+      observation_char_limit: 16000
+  - class_name: esr_grpo.integrations.echo_tools.ESROpenPageTool
+    config: *esr_config
+  - class_name: esr_grpo.integrations.echo_tools.ESRReadEvidenceTool
+    config: *esr_config
+  - class_name: esr_grpo.integrations.echo_tools.ESRUpdateStateTool
+    config: *esr_config
+  - class_name: esr_grpo.integrations.echo_tools.ESRVerifyAnswerTool
+    config: *esr_config
+  - class_name: esr_grpo.integrations.echo_tools.ESRSubmitAnswerTool
+    config: *esr_config
+

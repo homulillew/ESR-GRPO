@@ -1,0 +1,9 @@
+datasets==4.8.4
+pandas==2.3.3
+pyarrow==23.0.1
+openai>=1.97.0,<3
+fastmcp==2.9.2
+pyserini>=1.2.0
+faiss-cpu>=1.11.0.post1
+qwen-agent[gui,mcp,rag]==0.0.27
+

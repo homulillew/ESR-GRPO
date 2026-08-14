@@ -1,0 +1,9 @@
+experiment: full_trajectory_grpo
+model: Qwen/Qwen3-30B-A3B-Instruct-2507
+framework: echo_verl
+adv_estimator: grpo
+use_esr_state: false
+rollouts_per_question: 8
+train_batch_size: 32
+learning_rate: 1.0e-6
+reward: benchmark_final_correctness_only

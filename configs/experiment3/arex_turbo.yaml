@@ -1,0 +1,6 @@
+experiment: arex_turbo_inference_baseline
+model: BAAI/AREX-Turbo
+training: false
+tool_surface: same_as_esr
+evaluation: [accuracy, evidence_recall, calibration_error]
+

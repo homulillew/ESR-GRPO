@@ -1,0 +1,5 @@
+# CPU 核心和单元测试
+pytest>=8.0,<9
+pytest-cov>=5,<7
+pyyaml>=6.0,<7
+

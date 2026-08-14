@@ -1,0 +1,10 @@
+experiment: echo_baseline
+model: Qwen/Qwen3-30B-A3B-Instruct-2507
+framework: echo_verl
+adv_estimator: supo
+context_compression_method: echo_e2e
+echo_credit_method: token
+echo_credit_penalty_ratio: 0.0
+rollouts_per_question: 8
+train_batch_size: 32
+learning_rate: 1.0e-6

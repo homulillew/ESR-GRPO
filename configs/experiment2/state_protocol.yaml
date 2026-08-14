@@ -1,0 +1,16 @@
+experiment: task_state_protocol_audit
+sample_size: 100
+relationship_labels:
+  - single_evidence
+  - parallel_evidence
+  - multi_hop
+  - conflict
+  - temporal_constraint
+checks:
+  - directory_coverage
+  - submit_after_update_and_verify
+  - submitted_answer_equals_task_state_answer
+  - placeholder_finding
+  - unsupported_evidence_id
+  - unresolved_gap
+
