@@ -1,6 +1,6 @@
 # 实验一 Baseline评测结果和bad_case分析
 
-本周主要评测了一下AREX-Turbo-4B和ABSeeker-4B在BrowseComp-Plus上的结果。
+本周主要评测了一下AREX-Turbo-4B在BrowseComp-Plus上的结果。
 
 ## AREX-Turbo-4B主要结果
 
@@ -96,3 +96,91 @@ AREX的外层循环使用了置信度作为判别依据
 - 47 条召回全部标准证据。
 
 这说明至少有104 条错误已经召回至少一半标准证据，但是仍然回答错误。需要继续针对这104条继续分析是哪里出了问题：页面选择、证据解释、状态维护、答案提交。
+
+## bad_case分析与Search中的记忆设计分析
+
+### AREX的记忆设计
+
+AREX 在搜索过程中会通过 `update_context` 维护当前的研究记忆 `context` 字符串。字段大致如下
+
+```
+Context
+├── Confirmed Knowledge     已确认的信息 + URL
+├── Current Candidates      当前候选
+├── Rejected Candidates     已排除候选及原因
+├── Unresolved Constraints  还没有解决的条件
+└── Next Steps              下一步搜索计划
+```
+
+其单轮推理过程如下
+
+```
+Search → Visit → Reason → Update Context → Continue Search / Finish
+```
+
+模型先通过 Search 找候选页面，再通过 Visit 阅读具体内容。在搜索过程中，模型会不断根据当前证据更新判断，并通过 `update_context` 压缩和保存当前状态。如果认为证据已经足够，则调用 `finish` 提交最终答案。
+
+AREX 已经通过 `update_context` 解决了长轨迹中的上下文压缩问题，但其 Evidence、推断和候选判断仍然主要保存在同一段文本 State 中，并在后续推理中被反复压缩。
+
+这个设计可以减少长轨迹中的上下文长度，但也带来一个比较重要的问题：**Evidence、模型推断和候选判断实际上都由模型写在同一个 `context` 字符串里，并没有严格区分字段和版本。** **一旦某个错误判断被写进 Context，后面的搜索就可能持续受到影响。**
+
+### bad_case分析
+
+从前面的结果来看，AREX 的主要问题并不是单纯的 Evidence Recall 不足。**部分错误轨迹已经检索到足够证据，但在后续的状态维护和推理过程中仍然失败。**比如在190 条正常提交但回答错误的轨迹里，有 **104 条 Evidence Recall ≥ 0.5**，其中 **47 条 Recall = 1.0**，说明问题可能出现在 Evidence 被召回之后。。下面我们对这104条bad_case对共性进行分析
+
+#### 1. 搜到了，但没有真正使用
+
+证据高召回只表示证据进入过 Search 结果，并不代表模型实际访问和使用了这些页面。
+
+从错误轨迹来看，一个比较明显的问题是模型进行了大量 Search，但真正 Visit 的页面很少。也就是说，部分高 Recall 轨迹的问题实际发生在：
+
+```
+检索到页面 → 实际访问页面
+```
+
+##### 启发
+
+这部分**支持 ESR 的 Evidence 设计**。相比只记录 Search 结果，ESR 会区分 `search → open/read → Evidence`，只有真正读取并进入最终状态的证据才参与后续信用分配。
+
+#### 2. Evidence 正确，但 State 写错
+
+另一类问题是模型已经看到正确信息，但在 `update_context` 时进行了错误解释，之后继续根据错误 State 搜索。
+
+这类错误可以概括为：
+
+```
+正确召回 → 错误写入状态 → 污染后续搜索
+```
+
+##### 启发
+
+这部分比较直接地**支持 ESR 将 Evidence 和 TaskState 分开保存**。原始 Evidence 不会因为 State 更新而被覆盖，可以重新检查之前的判断。
+
+但这也说明 ESR 还可以继续优化。目前 State 中的 `finding` 仍然可能混合事实和推断，可能也会存在和AREX类似的问题
+
+#### 3. Evidence 都找到了，但关系判断错误
+
+47 条错误轨迹的 Evidence Recall 已经达到 1.0，因此这部分已经基本排除了 Retrieval 不足。
+
+其中还有 22 条在最终回答错误的情况下给出了 **90%** 以上的置信度。说明模型不仅找到了相关证据，而且认为自己的证据链已经成立。
+
+这类 case 中比较常见的问题是**实体、论文、人物或者条件本身都找到了，但最后的对应关系绑错了。**
+
+##### 启发
+
+这部分**支持 ESR 显式 TaskState 和 Verification 的设计**，但也说明目前的 State 还可以进一步增加简单的关系设计
+
+#### 4. 错误候选结果污染后续搜索
+
+部分高 Recall case 是模型较早锁定了一个错误候选，之后 Search 和 `update_context` 都被污染，继续围绕错误候选展开。
+
+##### 启发
+
+这部分**支持 ESR 的 Gap-driven Search 和 Verification**。Search 应该围绕尚未解决的 Gap。
+
+但是AREX本身也设置了类似Gap的字段，但是搜索仍然没有安装Gap进行搜索，可能是**由于Gap字段和其他字段混合在一起，导致后续搜索没能关注Gap字段**。
+
+## 实验计划
+
+1. 继续分析AREX的其余的bad_case，重点关注证据使用链路的共性问题在哪里。
+2. 继续分析ABSeeker的评测结果已经bad_case，这个方法的记忆设计和信用分配比AREX更细粒度
